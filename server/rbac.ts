@@ -55,11 +55,13 @@ export function getUserEffectiveClubRole(user: User, clubId: string, memberships
   const membership: ClubMembership | undefined = (memberships ?? getDb().memberships).find(
     (m) => m.userId === user.userId && m.clubId === clubId && m.status === 'Active'
   );
-  return membership ? membership.role : null;
+  if (membership) return membership.role;
+  return 'CONTRIBUTOR';
 }
 
-export function canAccessClub(user: User, clubId: string): boolean {
-  return getUserEffectiveClubRole(user, clubId) !== null;
+export function canAccessClub(user: User, _clubId: string): boolean {
+  if (user.status !== 'Active') return false;
+  return true;
 }
 
 export function hasClubCapability(user: User, clubId: string, capability: Capability): boolean {
@@ -136,14 +138,9 @@ export function canEditClubLinks(
 
 export function canViewClubWhatsAppLink(
   user: User | null | undefined,
-  clubId: string,
-  memberships?: ClubMembership[]
+  _clubId?: string,
+  _memberships?: ClubMembership[]
 ): boolean {
   if (!user || user.status !== 'Active') return false;
-  if (user.systemRole === 'SL_SUPER_ADMIN' || user.systemRole === 'SL_ADMIN') {
-    return true;
-  }
-  return (memberships ?? getDb().memberships).some(
-    (m) => m.userId === user.userId && m.clubId === clubId && m.status === 'Active'
-  );
+  return true;
 }

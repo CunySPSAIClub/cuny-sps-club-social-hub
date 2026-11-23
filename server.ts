@@ -175,7 +175,7 @@ function sanitizeWhatsAppGroup(
   }
   return {
     ...base,
-    inviteLink: group.showInviteToMembers ? group.inviteLink : '',
+    inviteLink: group.inviteLink || '',
     webhookUrl: undefined,
     whatsappPhoneNumberId: undefined,
     whatsappRecipientJid: undefined,
@@ -2371,6 +2371,13 @@ async function startServer() {
     }
 
     const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    const existingMembership = db.memberships.find(
+      (m) => m.userId === user.userId && m.clubId === clubId && m.status === 'Active'
+    );
+    const isMember = Boolean(existingMembership);
+    const pendingJoinRequest = (db.joinRequests ?? []).find(
+      (jr) => jr.userId === user.userId && jr.clubId === clubId && jr.status === 'Pending'
+    );
     const socialAccounts = db.socialAccounts
       .filter((a) => a.clubId === clubId)
       .map(sanitizeSocialAccount);
@@ -2425,6 +2432,8 @@ async function startServer() {
         budgetSummary: computeClubBudgetSummary(clubId),
       },
       effectiveRole,
+      isMember,
+      pendingJoinRequest: pendingJoinRequest ?? null,
       socialAccounts,
       posts,
       events,

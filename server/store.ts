@@ -37,7 +37,7 @@ import {
   normalizeSiteContent,
   type SiteContent,
 } from '../src/data/siteContent.ts';
-import { createDefaultClubLinks, createSeedAiClubLinks, normalizeClubLinks } from '../src/utils/clubLinks.ts';
+import { createDefaultClubLinks, createSeedAiClubLinks, createSeedMsaClubLinks, normalizeClubLinks } from '../src/utils/clubLinks.ts';
 import { splitFullName } from './authConfig.ts';
 import type { StoredSiteEditorAuth } from './siteContentAuth.ts';
 
@@ -1158,6 +1158,7 @@ function createCatalogClubs(): Club[] {
       facultyAdvisor: 'Prof. Tariq Siddiqui',
       onboardedAt: '2026-10-22T15:30:00.000Z',
       semesterBudgetAllocatedUsd: 500,
+      links: createSeedMsaClubLinks(),
     },
     {
       clubId: 'club-neurodiversity',
@@ -3027,10 +3028,20 @@ export function getDb(): HubDatabase {
           migrated = true;
         }
         if (!c.links) {
-          c.links = c.clubId === 'club-ai' ? createSeedAiClubLinks() : createDefaultClubLinks();
+          c.links =
+            c.clubId === 'club-ai'
+              ? createSeedAiClubLinks()
+              : c.clubId === 'club-msa'
+                ? createSeedMsaClubLinks()
+                : createDefaultClubLinks();
           migrated = true;
         } else {
-          c.links = normalizeClubLinks(c.links);
+          if (c.clubId === 'club-msa' && !c.links.fixed.some((f) => f.key === 'whatsapp' && f.active && f.url)) {
+            c.links = createSeedMsaClubLinks();
+            migrated = true;
+          } else {
+            c.links = normalizeClubLinks(c.links);
+          }
         }
       }
       if (!cachedDb.resourceSubmissions.some((s) => s.submissionId === 'SUB-2026-103')) {

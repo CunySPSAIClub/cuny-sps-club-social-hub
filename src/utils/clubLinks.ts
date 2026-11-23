@@ -128,6 +128,44 @@ export function createSeedAiClubLinks(): ClubLinksConfig {
   };
 }
 
+export function createSeedMsaClubLinks(): ClubLinksConfig {
+  return {
+    fixed: [
+      {
+        key: 'website',
+        active: true,
+        url: 'https://sps.cuny.edu/student-services/student-life/student-clubs-and-organizations',
+        description: 'Official CUNY SPS MSA portal, events, and campus initiatives',
+      },
+      {
+        key: 'facebook',
+        active: true,
+        url: 'https://www.facebook.com/cunyspsmsa',
+        description: 'Campus interfaith announcements and community gatherings',
+      },
+      {
+        key: 'instagram',
+        active: true,
+        url: 'https://www.instagram.com/cunysps.msa',
+        description: 'Community tea circles, event photos, and student features',
+      },
+      {
+        key: 'tiktok',
+        active: false,
+        url: '',
+        description: '',
+      },
+      {
+        key: 'whatsapp',
+        active: true,
+        url: 'https://chat.whatsapp.com/CunySpsMsaCommunity',
+        description: 'MSA tea & study circles, event alerts & community chat',
+      },
+    ],
+    additional: [],
+  };
+}
+
 export function normalizeClubLinks(raw?: Partial<ClubLinksConfig> | null): ClubLinksConfig {
   const rawFixed = Array.isArray(raw?.fixed) ? raw.fixed : [];
   const fixedMap = new Map<FixedClubLinkKey, Partial<ClubFixedLink>>();

@@ -66,6 +66,7 @@ import type {
   ClubBroadcastMessage,
   ClubEvent,
   ClubEventType,
+  ClubJoinRequest,
   ClubMembership,
   EventRecurrence,
   InboxMessage,
@@ -144,6 +145,8 @@ import { PWAInstallButton } from './pwa/PWAInstallButton';
 interface ClubWorkspacePayload {
   club: Club;
   effectiveRole: RoleName | null;
+  isMember?: boolean;
+  pendingJoinRequest?: ClubJoinRequest | null;
   socialAccounts: SocialAccount[];
   posts: Post[];
   events: ClubEvent[];
@@ -2194,12 +2197,14 @@ export function AppShell() {
                 <span className="font-semibold text-[#004B87]">
                   {portalMode === 'ADMIN'
                     ? formatRoleLabel(session.effectiveAdminRole)
-                    : formatRoleLabel(clubData?.effectiveRole)}
+                    : clubData?.isMember === false
+                      ? 'Guest Contributor'
+                      : formatRoleLabel(clubData?.effectiveRole)}
                 </span>
               </span>
               {portalMode === 'CLUB' && clubData?.effectiveRole === 'CONTRIBUTOR' && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Contributor
+                  {clubData?.isMember === false ? 'Guest' : 'Contributor'}
                 </span>
               )}
             </span>
@@ -2496,6 +2501,8 @@ export function AppShell() {
                     key={clubData.club.clubId}
                     club={clubData.club}
                     effectiveRole={clubData.effectiveRole}
+                    isMember={clubData.isMember}
+                    pendingJoinRequest={clubData.pendingJoinRequest}
                     socialAccounts={clubData.socialAccounts}
                     posts={clubData.posts}
                     events={clubData.events}

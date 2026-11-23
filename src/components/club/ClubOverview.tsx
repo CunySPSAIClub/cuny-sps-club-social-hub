@@ -7,8 +7,10 @@ import {
   BookOpen,
   CalendarClock,
   CheckCircle2,
+  Clock,
   DollarSign,
   Download,
+  ExternalLink,
   FileEdit,
   FileText,
   HelpCircle,
@@ -17,6 +19,8 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import { formatRoleLabel, useAuth } from '../../context/AuthContext';
 import { useSiteContent } from '../../context/SiteContentContext';
@@ -25,6 +29,7 @@ import type {
   Club,
   ClubCharterRenewalSummary,
   ClubEvent,
+  ClubJoinRequest,
   NotificationItem,
   OfficerTransitionChecklist,
   PlatformMetric,
@@ -44,7 +49,7 @@ import {
   EditableText,
 } from '../cms/EditablePrimitives';
 import { CustomSectionsList, EditableSectionShell } from '../cms/SectionBuilder';
-import { ClubLinksSection } from './ClubLinksSection';
+import { ClubLinkPlatformIcon, ClubLinksSection } from './ClubLinksSection';
 import { ClubMessagingCenter } from './ClubMessagingCenter';
 import { ClubProfileEditor } from './ClubProfileEditor';
 import { ClubWhatsAppPanel } from './ClubWhatsAppPanel';
@@ -52,6 +57,8 @@ import { ClubWhatsAppPanel } from './ClubWhatsAppPanel';
 interface ClubOverviewProps {
   club: Club;
   effectiveRole: RoleName | null;
+  isMember?: boolean;
+  pendingJoinRequest?: ClubJoinRequest | null;
   socialAccounts: SocialAccount[];
   posts: Post[];
   events?: ClubEvent[];
@@ -68,6 +75,8 @@ interface ClubOverviewProps {
 export function ClubOverview({
   club,
   effectiveRole,
+  isMember = true,
+  pendingJoinRequest = null,
   socialAccounts,
   posts,
   events = [],
@@ -91,6 +100,51 @@ export function ClubOverview({
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [actionError, setActionError] = useState('');
+
+  // Join club request state
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinInterest, setJoinInterest] = useState('General Member / Contributor');
+  const [joinReason, setJoinReason] = useState('');
+  const [submittingJoin, setSubmittingJoin] = useState(false);
+  const [localPendingJoinRequest, setLocalPendingJoinRequest] = useState<ClubJoinRequest | null>(
+    pendingJoinRequest ?? null
+  );
+
+  useEffect(() => {
+    setLocalPendingJoinRequest(pendingJoinRequest ?? null);
+  }, [pendingJoinRequest]);
+
+  const handleSubmitJoinRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinReason.trim()) {
+      setActionError('Please provide a brief reason or note for club leadership.');
+      return;
+    }
+    setSubmittingJoin(true);
+    setActionError('');
+    try {
+      const res = await apiFetch<{ joinRequest: ClubJoinRequest }>(
+        `/api/clubs/${club.clubId}/join-requests`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            preferredInterest: joinInterest,
+            reason: joinReason.trim(),
+          }),
+        }
+      );
+      setLocalPendingJoinRequest(res.joinRequest);
+      setShowJoinModal(false);
+      setStatusMessage(
+        `Your request to join ${club.name} as a Contributor has been submitted! Club leads have been notified.`
+      );
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to submit join request.');
+    } finally {
+      setSubmittingJoin(false);
+    }
+  };
 
   // Increased funding request form state
   const [showFundingForm, setShowFundingForm] = useState(false);
@@ -345,7 +399,7 @@ export function ClubOverview({
           )}
           <div className="space-y-1">
             <div className="text-xs font-medium text-slate-500">
-              {club.shortCode} · {club.category} · Your Role: {formatRoleLabel(effectiveRole)}
+              {club.shortCode} · {club.category} · {isMember ? `Your Role: ${formatRoleLabel(effectiveRole)}` : 'Non-Member (Viewing as Contributor)'}
             </div>
             <EditableText
               as="h1"
@@ -399,6 +453,23 @@ export function ClubOverview({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {!isMember && (
+            localPendingJoinRequest ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-300 rounded-md">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span>Join Request Pending</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowJoinModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Request to Join</span>
+              </button>
+            )
+          )}
           <button
             type="button"
             onClick={() => onNavigate(effectiveRole === 'CONTRIBUTOR' ? 'ask-club' : 'member-questions')}
@@ -520,6 +591,178 @@ export function ClubOverview({
       {statusMessage && (
         <div className="p-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-md">
           {statusMessage}
+        </div>
+      )}
+
+      {/* Join Request Banner for Non-Members */}
+      {!isMember && !localPendingJoinRequest && (
+        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <UserPlus className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-slate-900">Interested in {club.name}?</div>
+              <div className="text-xs text-slate-600 mt-0.5">
+                Submit a request to become a Contributor. You will be able to collaborate with club leaders, attend special events, and appear in the member directory upon approval.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowJoinModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition-colors cursor-pointer shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Request to Join as Contributor</span>
+          </button>
+        </div>
+      )}
+
+      {!isMember && localPendingJoinRequest && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <div className="text-sm font-semibold text-amber-900">Request to Join Submitted</div>
+              <div className="text-xs text-amber-700 mt-0.5">
+                Your request to become a Contributor in {club.name} was submitted on{' '}
+                {new Date(localPendingJoinRequest.createdAt).toLocaleDateString()} and is currently pending review by club leaders.
+              </div>
+            </div>
+          </div>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+            Pending Approval
+          </span>
+        </div>
+      )}
+
+      {/* Official WhatsApp Groups Card */}
+      {whatsappGroups && whatsappGroups.length > 0 && (
+        <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-4">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-2">
+              <ClubLinkPlatformIcon kind="whatsapp" className="w-4 h-4" />
+              <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                Official Club WhatsApp Community &amp; Event Alerts
+              </h3>
+            </div>
+            <span className="text-[11px] text-emerald-700 font-medium">
+              Open to all CUNY SPS students &amp; members
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {whatsappGroups.map((grp) => (
+              <div
+                key={grp.groupId}
+                className="bg-white border border-emerald-200 rounded-md p-3 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-900 truncate">{grp.groupName}</div>
+                  <div className="text-[11px] text-slate-500 truncate">{grp.description || grp.groupCategory}</div>
+                </div>
+                {grp.inviteLink ? (
+                  <a
+                    href={grp.inviteLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] rounded-md shrink-0 shadow-sm transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Join WhatsApp</span>
+                  </a>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showJoinModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-white border border-slate-200 rounded-lg shadow-xl max-w-md w-full overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-semibold text-slate-900">Request to Join {club.name}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowJoinModal(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitJoinRequest} className="p-5 space-y-4">
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-md text-xs text-sky-800">
+                Club leadership will review your request. Once approved, you will join as a{' '}
+                <strong>Contributor</strong> to {club.name}.
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Student Name</span>
+                  <span className="font-semibold text-slate-900">{session?.user.name}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Email</span>
+                  <span className="font-semibold text-slate-900 truncate block">{session?.user.email}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  How would you like to contribute?
+                </label>
+                <select
+                  value={joinInterest}
+                  onChange={(e) => setJoinInterest(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
+                >
+                  <option value="General Member / Contributor">General Member / Contributor</option>
+                  <option value="Event Operations & Logistics">Event Operations & Logistics</option>
+                  <option value="Communications, Design & Social Media">Communications, Design & Social Media</option>
+                  <option value="Technical Projects & Workshops">Technical Projects & Workshops</option>
+                  <option value="Peer Mentoring & Study Groups">Peer Mentoring & Study Groups</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Why would you like to join? <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={joinReason}
+                  onChange={(e) => setJoinReason(e.target.value)}
+                  placeholder="Share your interests or what you hope to work on with the club..."
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowJoinModal(false)}
+                  className="px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-md cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingJoin}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-md shadow-sm transition-colors cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>{submittingJoin ? 'Submitting...' : 'Submit Request'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
