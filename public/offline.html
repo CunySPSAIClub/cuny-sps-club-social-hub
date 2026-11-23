@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B0B0F" />
+    <title>Offline · CUNY SPS Club Social Hub</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #0b0b0f;
+        color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .card {
+        width: 100%;
+        max-width: 420px;
+        background: #14141b;
+        border: 1px solid #262633;
+        border-radius: 16px;
+        padding: 32px 28px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      .logo {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 20px;
+        display: block;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #c4f500;
+        margin: 0 0 8px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 22px;
+        line-height: 1.25;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      p {
+        margin: 0 0 22px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: #94a3b8;
+      }
+      .note {
+        margin: 0 0 24px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 12px;
+        line-height: 1.5;
+        color: #cbd5e1;
+      }
+      button {
+        appearance: none;
+        border: none;
+        width: 100%;
+        padding: 12px 18px;
+        border-radius: 10px;
+        background: #c4f500;
+        color: #0b0b0f;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+      button:hover {
+        opacity: 0.92;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main">
+      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="CUNY SPS Club Social Hub">
+        <rect width="64" height="64" rx="14" fill="#0B0B0F" stroke="#262633" stroke-width="2" />
+        <path d="M 46.2 21.5 A 17.5 17.5 0 1 0 46.2 42.5" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="butt" />
+        <rect x="26.5" y="26.5" width="11" height="11" fill="#C4F500" />
+      </svg>
+      <p class="eyebrow">CUNY SPS Club Social Hub</p>
+      <h1>You&rsquo;re currently offline</h1>
+      <p>
+        We couldn&rsquo;t reach the campus hub right now. Check your Wi-Fi or mobile connection and try again.
+      </p>
+      <div class="note">
+        For student privacy on shared campus computers, club messages, member rosters, and account data are never saved in the offline cache.
+      </div>
+      <button type="button" onclick="window.location.reload()">Try Again</button>
+    </main>
+  </body>
+</html>

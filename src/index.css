@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-brand: 'Archivo', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Public Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --brand-ink: #0b0b0f;
+    --brand-paper: #f4f4f2;
+    --brand-signal: #c4f500;
+    --cuny-navy: #004b87;
+    --site-primary: #004b87;
+    --site-secondary: #0b0b0f;
+    --site-accent: #c4f500;
+    --site-bg: #f8fafc;
+    --site-text: #0f172a;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--site-bg);
+    color: var(--site-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+.font-brand {
+  font-family: var(--font-brand);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keep keyboard focus visible without changing pointer interactions. */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 3px;
+}
+
+/* Live site-wide brand theme propagation (preserves default look 1:1 when unchanged) */
+html[data-site-themed="true"] body,
+html[data-site-themed="true"] .min-h-screen.bg-slate-50 {
+  background-color: var(--site-bg);
+  color: var(--site-text);
+}
+
+html[data-site-themed="true"] .bg-\[\#004B87\] {
+  background-color: var(--site-primary);
+}
+
+html[data-site-themed="true"] .text-\[\#004B87\] {
+  color: var(--site-primary);
+}
+
+html[data-site-themed="true"] .border-\[\#004B87\] {
+  border-color: var(--site-primary);
+}
+
+html[data-site-themed="true"] .bg-\[\#0B0B0F\] {
+  background-color: var(--site-secondary);
+}
+
+html[data-site-themed="true"] .text-slate-900 {
+  color: var(--site-text);
+}
