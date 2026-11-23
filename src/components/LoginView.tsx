@@ -10,6 +10,7 @@ import {
   Plus,
   ShieldCheck,
   Trash2,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import { formatRoleLabel, type PersonaListItem, useAuth } from '../context/AuthContext';
@@ -375,6 +376,11 @@ export function LoginView() {
         const leadPersona = personas.find((p) =>
           p.memberships.some((m) => m.role === 'CLUB_LEAD' && m.status === 'Active')
         );
+        const contributorPersona = personas.find(
+          (p) =>
+            p.user.userId === 'usr-contrib-ai' ||
+            p.memberships.some((m) => m.role === 'CONTRIBUTOR' && m.status === 'Active')
+        );
         return (
           <div className="pt-3 border-t border-slate-100 space-y-2">
             <EditableText
@@ -387,7 +393,7 @@ export function LoginView() {
               }
               className="text-[11px] font-semibold text-slate-500"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {adminPersona && (
                 <button
                   type="button"
@@ -424,6 +430,18 @@ export function LoginView() {
                       })
                     }
                   />
+                </button>
+              )}
+              {contributorPersona && (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void handleQuickSignIn(contributorPersona.user.userId)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md cursor-pointer"
+                  title="Sign in as Sofia Patel (Contributor)"
+                >
+                  <UserCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                  <span className="truncate">Sofia Patel (Contributor)</span>
                 </button>
               )}
             </div>

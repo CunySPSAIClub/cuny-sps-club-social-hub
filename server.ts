@@ -83,6 +83,7 @@ import {
 import { createDefaultClubLinks } from './src/utils/clubLinks.ts';
 import type {
   AccountRequestStatus,
+  AccountRequestType,
   AnnouncementPriority,
   BlogPostCategory,
   BlogPostStatus,
@@ -116,11 +117,15 @@ import type {
   ForumReply,
   ForumThread,
   InboxThreadTag,
+  MemberQuestion,
   OfficerTransitionChecklist,
   PeerReviewComment,
   Post,
   PublicClubSummary,
   PublishAttempt,
+  QuestionMessage,
+  QuestionStatus,
+  QuestionTopic,
   ResourceSubmission,
   ResourceSubmissionStatus,
   ResourceSubmissionType,
@@ -1811,7 +1816,7 @@ async function startServer() {
         id: `ann-preview-${ann.announcementId}`,
         category: 'Announcement',
         title: ann.title,
-        body: ann.body.slice(0, 120),
+        body: ann.message.slice(0, 120),
         timeLabel: 'Club update',
       });
     }
@@ -1826,11 +1831,7 @@ async function startServer() {
         ).length
       : 0;
 
-    const newAnnouncements = primaryClubId
-      ? (db.announcements ?? []).filter(
-          (a) => !a.clubId || a.clubId === primaryClubId
-        ).length
-      : (db.announcements ?? []).length;
+    const newAnnouncements = (db.announcements ?? []).length;
 
     const newMembers = primaryClubId
       ? db.memberships.filter((m) => m.clubId === primaryClubId && m.status === 'Active').length
@@ -4638,7 +4639,7 @@ async function startServer() {
     const user = req.currentUser!;
     const clubId = String(req.params.id);
     if (!hasClubCapability(user, clubId, 'CREATE_CONTENT_DRAFT')) {
-      res.status(403).json({ error: 'Viewers cannot create content drafts.' });
+      res.status(403).json({ error: 'Not allowed for your role' });
       return;
     }
     const {
@@ -4714,18 +4715,8 @@ async function startServer() {
     }
     const effectiveRole = getUserEffectiveClubRole(user, clubId);
     if (effectiveRole === 'CONTRIBUTOR') {
-      if (post.authorId !== user.userId) {
-        res.status(403).json({
-          error: 'Contributors can only edit their own drafts.',
-        });
-        return;
-      }
-      if (post.status !== 'Draft' && post.status !== 'In Review') {
-        res.status(403).json({
-          error: 'Contributors cannot edit scheduled or published posts.',
-        });
-        return;
-      }
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
     }
     if (post.status === 'Scheduled' && !hasClubCapability(user, clubId, 'SCHEDULE_CONTENT')) {
       res.status(403).json({ error: 'Only an Editor or Club Lead may change scheduled content.' });
@@ -5452,7 +5443,7 @@ async function startServer() {
     const clubId = String(req.params.id);
     if (!hasClubCapability(user, clubId, 'CREATE_CONTENT_DRAFT')) {
       res.status(403).json({
-        error: 'Posting upcoming meetings or campus events requires Contributor permissions or higher.',
+        error: 'Not allowed for your role',
       });
       return;
     }
@@ -5620,6 +5611,11 @@ async function startServer() {
     const user = req.currentUser!;
     const clubId = String(req.params.id);
     const eventId = String(req.params.eventId);
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
     if (!hasClubCapability(user, clubId, 'SCHEDULE_CONTENT')) {
       res.status(403).json({
         error: 'Only Club Leads, Editors, or Student Life Administrators can edit scheduled club events.',
@@ -6070,6 +6066,11 @@ async function startServer() {
     const user = req.currentUser!;
     const clubId = String(req.params.id);
     const eventId = String(req.params.eventId);
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
     if (!hasClubCapability(user, clubId, 'SCHEDULE_CONTENT')) {
       res.status(403).json({
         error: 'Only Club Leads, Editors, or Student Life Administrators can remove scheduled club events.',
@@ -6402,6 +6403,11 @@ async function startServer() {
       });
       return;
     }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR' || effectiveRole === 'VIEWER') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
 
     const db = getDb();
     const club = db.clubs.find((c) => c.clubId === clubId);
@@ -6487,6 +6493,11 @@ async function startServer() {
       });
       return;
     }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR' || effectiveRole === 'VIEWER') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
 
     const db = getDb();
     const club = db.clubs.find((c) => c.clubId === clubId);
@@ -6570,6 +6581,11 @@ async function startServer() {
     const threadId = String(req.params.threadId);
     if (!canAccessClub(user, clubId)) {
       res.status(403).json({ error: 'Unauthorized club forum access.' });
+      return;
+    }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
       return;
     }
 
@@ -6725,6 +6741,11 @@ async function startServer() {
       res.status(403).json({ error: 'Unauthorized club forum access.' });
       return;
     }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
 
     const db = getDb();
     const thread = db.forumThreads.find((t) => t.threadId === threadId && t.clubId === clubId);
@@ -6780,6 +6801,11 @@ async function startServer() {
       res.status(403).json({ error: 'Unauthorized club forum access.' });
       return;
     }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
 
     const db = getDb();
     const idx = db.forumThreads.findIndex((t) => t.threadId === threadId && t.clubId === clubId);
@@ -6810,6 +6836,285 @@ async function startServer() {
     });
     saveDb();
     res.json({ ok: true });
+  });
+
+  // Ask the Club / Member Questions (US-CONTRIB)
+  app.get('/api/clubs/:id/questions', (req: AuthedRequest, res) => {
+    const user = req.currentUser!;
+    const clubId = String(req.params.id);
+    if (!canAccessClub(user, clubId)) {
+      res.status(403).json({ error: 'Unauthorized club questions access.' });
+      return;
+    }
+
+    const db = getDb();
+    const role = getUserEffectiveClubRole(user, clubId);
+    const isLeaderOrAdmin =
+      user.systemRole === 'SL_SUPER_ADMIN' ||
+      user.systemRole === 'SL_ADMIN' ||
+      role === 'CLUB_LEAD' ||
+      role === 'EDITOR';
+
+    const allClubQuestions = (db.memberQuestions ?? []).filter((q) => q.clubId === clubId);
+
+    // Leaders/Editors/Admins see all questions for their club; regular members see only their own private questions
+    const questions = (
+      isLeaderOrAdmin
+        ? allClubQuestions
+        : allClubQuestions.filter((q) => q.authorUserId === user.userId)
+    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+    res.json({ questions, isLeaderOrAdmin });
+  });
+
+  app.post('/api/clubs/:id/questions', (req: AuthedRequest, res) => {
+    const user = req.currentUser!;
+    const clubId = String(req.params.id);
+    if (!canAccessClub(user, clubId)) {
+      res.status(403).json({ error: 'Active club membership required to ask questions.' });
+      return;
+    }
+
+    const db = getDb();
+    const club = db.clubs.find((c) => c.clubId === clubId);
+    if (!club) {
+      res.status(404).json({ error: 'Club workspace not found.' });
+      return;
+    }
+
+    const { topic, subject, message, linkedEventId } = req.body as {
+      topic?: QuestionTopic;
+      subject?: string;
+      message?: string;
+      linkedEventId?: string;
+    };
+
+    const validTopics: QuestionTopic[] = ['General', 'Events', 'Joining/Membership', 'Other'];
+    if (!topic || !validTopics.includes(topic)) {
+      res.status(400).json({ error: 'A valid question topic is required.' });
+      return;
+    }
+    if (!subject?.trim()) {
+      res.status(400).json({ error: 'Question subject is required.' });
+      return;
+    }
+    if (!message?.trim()) {
+      res.status(400).json({ error: 'Initial question message cannot be empty.' });
+      return;
+    }
+
+    let linkedEventTitle: string | undefined;
+    if (linkedEventId) {
+      const ev = db.events.find((e) => e.eventId === linkedEventId);
+      if (ev) linkedEventTitle = ev.title;
+    }
+
+    const role = getUserEffectiveClubRole(user, clubId);
+    const roleLabel = role === 'CONTRIBUTOR' ? 'Contributor' : (role === 'VIEWER' ? 'Viewer' : (role === 'CLUB_LEAD' ? 'Club Lead' : (role === 'EDITOR' ? 'Social Media Editor' : 'General Member')));
+    const now = new Date().toISOString();
+    const questionId = `ques-${Date.now().toString().slice(-6)}`;
+    const newQuestion: MemberQuestion = {
+      questionId,
+      clubId,
+      authorUserId: user.userId,
+      authorName: user.name,
+      authorEmail: user.email,
+      authorRoleLabel: roleLabel,
+      topic,
+      subject: subject.trim(),
+      linkedEventId,
+      linkedEventTitle,
+      status: 'Waiting for reply',
+      createdAt: now,
+      updatedAt: now,
+      isReadByLeaders: false,
+      isReadByMember: true,
+      messages: [
+        {
+          messageId: `qmsg-${Date.now().toString().slice(-6)}-1`,
+          senderUserId: user.userId,
+          senderName: user.name,
+          senderRoleLabel: roleLabel,
+          body: message.trim(),
+          createdAt: now,
+        },
+      ],
+    };
+
+    if (!Array.isArray(db.memberQuestions)) {
+      db.memberQuestions = [];
+    }
+    db.memberQuestions.unshift(newQuestion);
+
+    // Notify all Club Leads of that club
+    const leaders = db.memberships.filter(
+      (m) => m.clubId === clubId && m.status === 'Active' && (m.role === 'CLUB_LEAD' || m.role === 'EDITOR')
+    );
+    for (const lead of leaders) {
+      pushNotification({
+        userId: lead.userId,
+        clubId,
+        type: 'Member Question',
+        title: `Member Question (${club.shortCode}): ${topic}`,
+        message: `${user.name} asked: "${subject.trim()}".`,
+      });
+    }
+
+    recordAudit({
+      actorId: user.userId,
+      actorName: user.name,
+      actorRole: role ?? user.systemRole,
+      action: 'ASK_CLUB_QUESTION',
+      category: 'Membership',
+      target: `${club.shortCode}: ${subject.trim()}`,
+      clubId,
+      details: `${user.name} submitted a private question to club leadership under topic ${topic}.`,
+    });
+
+    saveDb();
+    res.status(201).json({ question: newQuestion });
+  });
+
+  app.post('/api/clubs/:id/questions/:questionId/messages', (req: AuthedRequest, res) => {
+    const user = req.currentUser!;
+    const clubId = String(req.params.id);
+    const questionId = String(req.params.questionId);
+    if (!canAccessClub(user, clubId)) {
+      res.status(403).json({ error: 'Unauthorized question access.' });
+      return;
+    }
+
+    const db = getDb();
+    const club = db.clubs.find((c) => c.clubId === clubId);
+    const question = (db.memberQuestions ?? []).find(
+      (q) => q.questionId === questionId && q.clubId === clubId
+    );
+    if (!question) {
+      res.status(404).json({ error: 'Question conversation not found.' });
+      return;
+    }
+
+    const role = getUserEffectiveClubRole(user, clubId);
+    const isLeaderOrAdmin =
+      user.systemRole === 'SL_SUPER_ADMIN' ||
+      user.systemRole === 'SL_ADMIN' ||
+      role === 'CLUB_LEAD' ||
+      role === 'EDITOR';
+    const isAuthor = question.authorUserId === user.userId;
+
+    if (!isLeaderOrAdmin && !isAuthor) {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
+
+    const { body } = req.body as { body?: string };
+    if (!body?.trim()) {
+      res.status(400).json({ error: 'Message body cannot be empty.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const senderRoleLabel = isLeaderOrAdmin
+      ? role === 'CLUB_LEAD'
+        ? 'Club Lead'
+        : role === 'EDITOR'
+          ? 'Social Media Editor'
+          : 'Student Life Administrator'
+      : question.authorRoleLabel || 'Contributor';
+
+    const newMessage: QuestionMessage = {
+      messageId: `qmsg-${Date.now().toString().slice(-6)}`,
+      senderUserId: user.userId,
+      senderName: user.name,
+      senderRoleLabel,
+      body: body.trim(),
+      createdAt: now,
+    };
+
+    question.messages.push(newMessage);
+    question.updatedAt = now;
+
+    if (isLeaderOrAdmin) {
+      question.status = 'Answered';
+      question.lastRepliedByName = user.name;
+      question.lastRepliedAt = now;
+      question.isReadByLeaders = true;
+      question.isReadByMember = false;
+
+      // Notify the member
+      pushNotification({
+        userId: question.authorUserId,
+        clubId,
+        type: 'Member Question',
+        title: `Reply from ${club?.shortCode ?? 'Club Leadership'}`,
+        message: `${user.name} replied to "${question.subject}": ${body.trim().slice(0, 120)}`,
+      });
+    } else {
+      question.status = 'Waiting for reply';
+      question.isReadByLeaders = false;
+      question.isReadByMember = true;
+
+      // Notify club leaders
+      const leaders = db.memberships.filter(
+        (m) => m.clubId === clubId && m.status === 'Active' && (m.role === 'CLUB_LEAD' || m.role === 'EDITOR')
+      );
+      for (const lead of leaders) {
+        pushNotification({
+          userId: lead.userId,
+          clubId,
+          type: 'Member Question',
+          title: `Follow-up on "${question.subject}"`,
+          message: `${user.name}: ${body.trim().slice(0, 120)}`,
+        });
+      }
+    }
+
+    saveDb();
+    res.json({ question });
+  });
+
+  app.patch('/api/clubs/:id/questions/:questionId/status', (req: AuthedRequest, res) => {
+    const user = req.currentUser!;
+    const clubId = String(req.params.id);
+    const questionId = String(req.params.questionId);
+    if (!canAccessClub(user, clubId)) {
+      res.status(403).json({ error: 'Unauthorized question access.' });
+      return;
+    }
+
+    const db = getDb();
+    const question = (db.memberQuestions ?? []).find(
+      (q) => q.questionId === questionId && q.clubId === clubId
+    );
+    if (!question) {
+      res.status(404).json({ error: 'Question not found.' });
+      return;
+    }
+
+    const role = getUserEffectiveClubRole(user, clubId);
+    const isLeaderOrAdmin =
+      user.systemRole === 'SL_SUPER_ADMIN' ||
+      user.systemRole === 'SL_ADMIN' ||
+      role === 'CLUB_LEAD' ||
+      role === 'EDITOR';
+    const isAuthor = question.authorUserId === user.userId;
+
+    if (!isLeaderOrAdmin && !isAuthor) {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
+
+    const { status } = req.body as { status?: QuestionStatus };
+    const validStatuses: QuestionStatus[] = ['Waiting for reply', 'Answered', 'Resolved'];
+    if (!status || !validStatuses.includes(status)) {
+      res.status(400).json({ error: 'Valid status is required.' });
+      return;
+    }
+
+    question.status = status;
+    question.updatedAt = new Date().toISOString();
+    saveDb();
+    res.json({ question });
   });
 
   // Club Announcements (Office of Student Life pinned campus-wide updates)
@@ -7437,6 +7742,11 @@ async function startServer() {
     const taskId = String(req.params.taskId);
     if (!canAccessClub(user, clubId)) {
       res.status(403).json({ error: 'Unauthorized club task access.' });
+      return;
+    }
+    const role = getUserEffectiveClubRole(user, clubId);
+    if (role === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
       return;
     }
 
@@ -9169,7 +9479,7 @@ async function startServer() {
     const clubId = String(req.params.id);
     if (!hasClubCapability(user, clubId, 'CREATE_CONTENT_DRAFT')) {
       res.status(403).json({
-        error: 'Creating club blog articles requires Contributor, Editor, Club Lead, or Student Life Admin permissions.',
+        error: 'Not allowed for your role',
       });
       return;
     }
@@ -9388,10 +9698,15 @@ async function startServer() {
     const canPublish = hasClubCapability(user, clubId, 'PUBLISH_CONTENT');
     const canDraft = hasClubCapability(user, clubId, 'CREATE_CONTENT_DRAFT');
     const isAuthor = post.authorUserId === user.userId;
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
 
     if (!canPublish && !(canDraft && isAuthor && post.status !== 'Published')) {
       res.status(403).json({
-        error: 'You do not have permission to edit or publish this club blog article.',
+        error: 'Not allowed for your role',
       });
       return;
     }
@@ -9600,6 +9915,11 @@ async function startServer() {
       return;
     }
     const post = db.blogPosts[idx];
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
     const canPublish = hasClubCapability(user, clubId, 'PUBLISH_CONTENT');
     const isOwnDraft = post.authorUserId === user.userId && post.status !== 'Published';
     if (!canPublish && !isOwnDraft) {
@@ -9659,6 +9979,11 @@ async function startServer() {
       res.status(403).json({ error: 'Club membership required to comment on articles.' });
       return;
     }
+    const effectiveRole = getUserEffectiveClubRole(user, clubId);
+    if (effectiveRole === 'CONTRIBUTOR' || effectiveRole === 'VIEWER') {
+      res.status(403).json({ error: 'Not allowed for your role' });
+      return;
+    }
     const db = getDb();
     const club = db.clubs.find((c) => c.clubId === clubId);
     const post = (db.blogPosts ?? []).find(
@@ -9677,7 +10002,6 @@ async function startServer() {
     const membership = db.memberships.find(
       (m) => m.userId === user.userId && m.clubId === clubId && m.status === 'Active'
     );
-    const effectiveRole = getUserEffectiveClubRole(user, clubId);
     const authorRoleLabel =
       membership?.officerTitle ??
       (effectiveRole === 'SL_SUPER_ADMIN' || effectiveRole === 'SL_ADMIN'

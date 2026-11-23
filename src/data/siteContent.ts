@@ -360,6 +360,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       { id: 'event-analytics', label: 'Event Analytics', section: 'Club Community', visible: true },
       { id: 'event-reminders', label: 'Email Reminders', section: 'Club Community', visible: true },
       { id: 'club-forums', label: 'Club Forums', section: 'Club Community', visible: true },
+      { id: 'ask-club', label: 'Ask the Club', section: 'Club Community', visible: true },
+      { id: 'member-questions', label: 'Member Questions', section: 'Club Community', visible: true },
       { id: 'messaging-center', label: 'Messaging Center', section: 'Club Community', visible: true },
       { id: 'whatsapp', label: 'WhatsApp Group', section: 'Club Community', visible: true },
       { id: 'club-blog', label: 'Club Blog', section: 'Club Community', visible: true },

@@ -33,10 +33,10 @@ export const PERMISSIONS_MATRIX: PermissionRow[] = [
   { capability: 'Approve internal account request', slSuperAdmin: 'Allowed', slAdmin: 'Conditional', clubLead: 'Not allowed', editor: 'Not allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Execute external account setup', slSuperAdmin: 'Conditional', slAdmin: 'Conditional', clubLead: 'Not allowed', editor: 'Not allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Connect existing social account', slSuperAdmin: 'Conditional', slAdmin: 'Conditional', clubLead: 'Conditional', editor: 'Not allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
-  { capability: 'Create content draft', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Allowed', viewer: 'Not allowed' },
+  { capability: 'Create content draft', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Schedule content', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Publish content', slSuperAdmin: 'Conditional', slAdmin: 'Conditional', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
-  { capability: 'View analytics', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Conditional', viewer: 'Conditional' },
+  { capability: 'View analytics', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Allowed', contributor: 'Not allowed', viewer: 'Conditional' },
   { capability: 'View private messages', slSuperAdmin: 'Conditional', slAdmin: 'Conditional', clubLead: 'Conditional', editor: 'Conditional', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Request account closure', slSuperAdmin: 'Allowed', slAdmin: 'Scoped', clubLead: 'Allowed', editor: 'Not allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
   { capability: 'Authorize internal closure request', slSuperAdmin: 'Allowed', slAdmin: 'Conditional', clubLead: 'Not allowed', editor: 'Not allowed', contributor: 'Not allowed', viewer: 'Not allowed' },
@@ -88,13 +88,13 @@ export function roleHasCapability(role: RoleName | null, capability: Capability)
     case 'REQUEST_ACCOUNT_CLOSURE':
       return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD';
     case 'CREATE_CONTENT_DRAFT':
-      return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD' || role === 'EDITOR' || role === 'CONTRIBUTOR';
+      return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD' || role === 'EDITOR';
     case 'SCHEDULE_CONTENT':
     case 'PUBLISH_CONTENT':
     case 'VIEW_PRIVATE_MESSAGES':
       return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD' || role === 'EDITOR';
     case 'VIEW_ANALYTICS':
-      return true; // Conditional for contributor/viewer on own club
+      return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD' || role === 'EDITOR';
     case 'VIEW_SECURITY_AUDIT_LOGS':
       return role === 'SL_SUPER_ADMIN' || role === 'SL_ADMIN' || role === 'CLUB_LEAD';
     default:
@@ -130,8 +130,7 @@ export function canEditClubLinks(
   if (!membership) return false;
   return (
     membership.role === 'CLUB_LEAD' ||
-    membership.role === 'EDITOR' ||
-    membership.role === 'CONTRIBUTOR'
+    membership.role === 'EDITOR'
   );
 }
 

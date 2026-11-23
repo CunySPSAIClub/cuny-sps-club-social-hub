@@ -885,8 +885,15 @@ export function ClubMemberDirectory({
                         return (
                           <tr key={member.membershipId} className="hover:bg-slate-50/70">
                             <td className="py-3.5 px-4">
-                              <div className="text-sm font-semibold text-slate-900">
-                                {member.name}
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-semibold text-slate-900">
+                                  {member.name}
+                                </div>
+                                {member.role === 'CONTRIBUTOR' && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                    Contributor
+                                  </span>
+                                )}
                               </div>
                               <div className="font-mono text-[11px] text-slate-500">
                                 {member.email}
@@ -939,6 +946,10 @@ export function ClubMemberDirectory({
                                     </option>
                                   ))}
                                 </select>
+                              ) : member.role === 'CONTRIBUTOR' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  Contributor
+                                </span>
                               ) : (
                                 <span className="text-slate-600">
                                   {formatRoleLabel(member.role)}

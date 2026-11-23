@@ -568,7 +568,8 @@ export interface NotificationItem {
     | 'Resource Submission'
     | 'Peer Review'
     | 'Reshare Request'
-    | 'Advisor Sign-Off';
+    | 'Advisor Sign-Off'
+    | 'Member Question';
   title: string;
   message: string;
   read: boolean;
@@ -1108,6 +1109,39 @@ export interface ClubBlogPost {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type QuestionTopic = 'General' | 'Events' | 'Joining/Membership' | 'Other';
+export type QuestionStatus = 'Waiting for reply' | 'Answered' | 'Resolved';
+
+export interface QuestionMessage {
+  messageId: string;
+  senderUserId: string;
+  senderName: string;
+  senderRoleLabel: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface MemberQuestion {
+  questionId: string;
+  clubId: string;
+  authorUserId: string;
+  authorName: string;
+  authorEmail: string;
+  authorRoleLabel: string;
+  topic: QuestionTopic;
+  subject: string;
+  linkedEventId?: string;
+  linkedEventTitle?: string;
+  status: QuestionStatus;
+  messages: QuestionMessage[];
+  createdAt: string;
+  updatedAt: string;
+  lastRepliedByName?: string;
+  lastRepliedAt?: string;
+  isReadByLeaders?: boolean;
+  isReadByMember?: boolean;
 }
 
 

@@ -309,8 +309,7 @@ export function ClubBlogView({
     effectiveRole === 'SL_SUPER_ADMIN' ||
     effectiveRole === 'SL_ADMIN' ||
     effectiveRole === 'CLUB_LEAD' ||
-    effectiveRole === 'EDITOR' ||
-    effectiveRole === 'CONTRIBUTOR';
+    effectiveRole === 'EDITOR';
 
   const canPublish =
     effectiveRole === 'SL_SUPER_ADMIN' ||
@@ -1799,27 +1798,29 @@ export function ClubBlogView({
                 Club Member Discussion ({activePost.comments.length})
               </h3>
 
-              <form
-                onSubmit={(e) => void handleAddComment(e, activePost)}
-                className="flex flex-col sm:flex-row gap-2"
-              >
-                <input
-                  type="text"
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder="Share a reflection, question, or follow-up resource with club members..."
-                  aria-label="Add a comment to this club blog article"
-                  className="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
-                />
-                <button
-                  type="submit"
-                  disabled={commentBusy || !commentInput.trim()}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] disabled:opacity-50 rounded-md whitespace-nowrap cursor-pointer"
+              {effectiveRole !== 'CONTRIBUTOR' && effectiveRole !== 'VIEWER' && (
+                <form
+                  onSubmit={(e) => void handleAddComment(e, activePost)}
+                  className="flex flex-col sm:flex-row gap-2"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{commentBusy ? 'Posting...' : 'Post Comment'}</span>
-                </button>
-              </form>
+                  <input
+                    type="text"
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    placeholder="Share a reflection, question, or follow-up resource with club members..."
+                    aria-label="Add a comment to this club blog article"
+                    className="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={commentBusy || !commentInput.trim()}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] disabled:opacity-50 rounded-md whitespace-nowrap cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{commentBusy ? 'Posting...' : 'Post Comment'}</span>
+                  </button>
+                </form>
+              )}
 
               {activePost.comments.length === 0 ? (
                 <p className="text-xs text-slate-500">

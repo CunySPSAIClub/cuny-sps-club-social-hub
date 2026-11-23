@@ -64,7 +64,7 @@ function renderBodyWithMentions(text: string) {
   );
 }
 
-export function ClubForums({ clubs, activeClubId, onRefreshParent }: ClubForumsProps) {
+export function ClubForums({ clubs, activeClubId, effectiveRole, onRefreshParent }: ClubForumsProps) {
   const { session, apiFetch } = useAuth();
   const [selectedClubId, setSelectedClubId] = useState<string>(
     activeClubId || clubs[0]?.clubId || ''
@@ -377,17 +377,19 @@ export function ClubForums({ clubs, activeClubId, onRefreshParent }: ClubForumsP
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setError('');
-              setShowNewForm((prev) => !prev);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] rounded-md whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{showNewForm ? 'Close Form' : 'Start Thread'}</span>
-          </button>
+          {effectiveRole !== 'CONTRIBUTOR' && effectiveRole !== 'VIEWER' && (
+            <button
+              type="button"
+              onClick={() => {
+                setError('');
+                setShowNewForm((prev) => !prev);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] rounded-md whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{showNewForm ? 'Close Form' : 'Start Thread'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -771,16 +773,18 @@ export function ClubForums({ clubs, activeClubId, onRefreshParent }: ClubForumsP
                             </button>
                           )}
 
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => void handleDeleteThread(thread)}
-                            aria-label={`Delete thread ${thread.title}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-slate-500 hover:text-red-700 disabled:opacity-50 whitespace-nowrap cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Delete</span>
-                          </button>
+                          {effectiveRole !== 'CONTRIBUTOR' && effectiveRole !== 'VIEWER' && (
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => void handleDeleteThread(thread)}
+                              aria-label={`Delete thread ${thread.title}`}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs text-slate-500 hover:text-red-700 disabled:opacity-50 whitespace-nowrap cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -845,35 +849,37 @@ export function ClubForums({ clubs, activeClubId, onRefreshParent }: ClubForumsP
                         </div>
                       )}
 
-                      <form
-                        onSubmit={(e) => void handlePostReply(e, thread)}
-                        className="flex flex-col sm:flex-row gap-2 pt-1"
-                      >
-                        <input
-                          type="text"
-                          required
-                          value={replyDrafts[thread.threadId] ?? ''}
-                          onChange={(e) =>
-                            setReplyDrafts((prev) => ({
-                              ...prev,
-                              [thread.threadId]: e.target.value,
-                            }))
-                          }
-                          placeholder={`Reply as ${session?.user.name ?? 'club member'} (use @Name to mention)...`}
-                          aria-label={`Reply to ${thread.title}`}
-                          className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
-                        />
-                        <button
-                          type="submit"
-                          disabled={replyingId === thread.threadId}
-                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] disabled:opacity-50 rounded-md whitespace-nowrap shrink-0 cursor-pointer"
+                      {effectiveRole !== 'CONTRIBUTOR' && effectiveRole !== 'VIEWER' && (
+                        <form
+                          onSubmit={(e) => void handlePostReply(e, thread)}
+                          className="flex flex-col sm:flex-row gap-2 pt-1"
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>
-                            {replyingId === thread.threadId ? 'Posting...' : 'Post Reply'}
-                          </span>
-                        </button>
-                      </form>
+                          <input
+                            type="text"
+                            required
+                            value={replyDrafts[thread.threadId] ?? ''}
+                            onChange={(e) =>
+                              setReplyDrafts((prev) => ({
+                                ...prev,
+                                [thread.threadId]: e.target.value,
+                              }))
+                            }
+                            placeholder={`Reply as ${session?.user.name ?? 'club member'} (use @Name to mention)...`}
+                            aria-label={`Reply to ${thread.title}`}
+                            className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
+                          />
+                          <button
+                            type="submit"
+                            disabled={replyingId === thread.threadId}
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-[#004B87] hover:bg-[#003865] disabled:opacity-50 rounded-md whitespace-nowrap shrink-0 cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>
+                              {replyingId === thread.threadId ? 'Posting...' : 'Post Reply'}
+                            </span>
+                          </button>
+                        </form>
+                      )}
                     </div>
                   </div>
                 )}

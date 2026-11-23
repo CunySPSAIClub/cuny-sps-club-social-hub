@@ -11,6 +11,7 @@ import {
   Download,
   FileEdit,
   FileText,
+  HelpCircle,
   Pencil,
   PenSquare,
   Plus,
@@ -106,12 +107,11 @@ export function ClubOverview({
   const draftPosts = posts.filter((p) => p.status === 'Draft' || p.status === 'In Review');
   const recentPublished = posts.filter((p) => p.status === 'Published' || p.status === 'Failed');
 
-  const canCreate = effectiveRole !== 'VIEWER';
+  const canCreate = effectiveRole !== 'VIEWER' && effectiveRole !== 'CONTRIBUTOR';
   const canEditLinks =
     Boolean(session?.effectiveAdminRole) ||
     effectiveRole === 'CLUB_LEAD' ||
-    effectiveRole === 'EDITOR' ||
-    effectiveRole === 'CONTRIBUTOR';
+    effectiveRole === 'EDITOR';
   const canEditProfile =
     effectiveRole === 'CLUB_LEAD' ||
     effectiveRole === 'SL_ADMIN' ||
@@ -399,6 +399,14 @@ export function ClubOverview({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate(effectiveRole === 'CONTRIBUTOR' ? 'ask-club' : 'member-questions')}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#004B87] bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md whitespace-nowrap cursor-pointer shadow-sm"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-[#004B87]" />
+            <span>{effectiveRole === 'CONTRIBUTOR' ? 'Ask a Question' : 'Member Questions'}</span>
+          </button>
           <button
             type="button"
             onClick={() => onNavigate('club-blog')}

@@ -20,6 +20,7 @@ import type {
   ForumThread,
   InboxMessage,
   Invitation,
+  MemberQuestion,
   NotificationItem,
   OfficerTransitionChecklist,
   PlatformMetric,
@@ -91,6 +92,7 @@ export interface HubDatabase {
   blogPosts: ClubBlogPost[];
   clubBlogTaxonomies: Record<string, ClubBlogTaxonomy>;
   publicCatalogEventsSeeded?: boolean;
+  memberQuestions: MemberQuestion[];
   siteContent: SiteContent;
   siteContentUpdatedAt: string;
   siteEditorAuth?: StoredSiteEditorAuth;
@@ -1328,6 +1330,73 @@ function createCatalogClubs(): Club[] {
   ];
 }
 
+function createInitialMemberQuestions(): MemberQuestion[] {
+  return [
+    {
+      questionId: 'ques-101',
+      clubId: 'club-ai',
+      authorUserId: 'usr-contrib-ai',
+      authorName: 'Sofia Patel',
+      authorEmail: 'sofia.patel@spsmail.cuny.edu',
+      authorRoleLabel: 'Contributor',
+      topic: 'Events',
+      subject: 'Virtual setup & lightning demo links for Fall AI & Civic Tech Build Night',
+      linkedEventId: 'evt-1',
+      linkedEventTitle: 'Fall AI & Civic Tech Build Night',
+      status: 'Answered',
+      createdAt: '2026-11-12T15:20:00.000Z',
+      updatedAt: '2026-11-12T17:45:00.000Z',
+      lastRepliedByName: 'Aisha Rahman',
+      lastRepliedAt: '2026-11-12T17:45:00.000Z',
+      isReadByLeaders: true,
+      isReadByMember: true,
+      messages: [
+        {
+          messageId: 'qmsg-101-1',
+          senderUserId: 'usr-contrib-ai',
+          senderName: 'Sofia Patel',
+          senderRoleLabel: 'Contributor',
+          body: 'Hi Aisha! Excited for the Build Night! Are asynchronous students presenting live or can we submit short video walkthroughs in advance?',
+          createdAt: '2026-11-12T15:20:00.000Z',
+        },
+        {
+          messageId: 'qmsg-101-2',
+          senderUserId: 'usr-lead-ai',
+          senderName: 'Aisha Rahman',
+          senderRoleLabel: 'Club Lead',
+          body: "Hi Sofia! Yes, absolutely. You can submit a 3-minute Loom or Google Drive video link by Thursday noon and we will stream it during the project showcase. Excited to see what you've built!",
+          createdAt: '2026-11-12T17:45:00.000Z',
+        },
+      ],
+    },
+    {
+      questionId: 'ques-102',
+      clubId: 'club-ai',
+      authorUserId: 'usr-contrib-ai',
+      authorName: 'Sofia Patel',
+      authorEmail: 'sofia.patel@spsmail.cuny.edu',
+      authorRoleLabel: 'Contributor',
+      topic: 'Joining/Membership',
+      subject: 'Contributing to project presentation graphics & Figma templates',
+      status: 'Waiting for reply',
+      createdAt: '2026-11-13T14:15:00.000Z',
+      updatedAt: '2026-11-13T14:15:00.000Z',
+      isReadByLeaders: false,
+      isReadByMember: true,
+      messages: [
+        {
+          messageId: 'qmsg-102-1',
+          senderUserId: 'usr-contrib-ai',
+          senderName: 'Sofia Patel',
+          senderRoleLabel: 'Contributor',
+          body: 'Hello AI Club team! I have experience with Figma and presentation design from my Communications coursework. Could I help design the presentation templates or slide decks for upcoming club workshops?',
+          createdAt: '2026-11-13T14:15:00.000Z',
+        },
+      ],
+    },
+  ];
+}
+
 function createInitialDatabase(): HubDatabase {
   const users: User[] = [
     {
@@ -1380,8 +1449,8 @@ function createInitialDatabase(): HubDatabase {
       name: 'Sofia Patel',
       email: 'sofia.patel@spsmail.cuny.edu',
       identitySubject: 'cuny-sso|spatel-312',
-      title: 'Communications Contributor',
-      departmentOrMajor: 'B.A. in Communication & Media',
+      title: 'Club Member',
+      departmentOrMajor: 'B.A. in Communication and Media',
       systemRole: 'STANDARD_USER',
       status: 'Active',
       lastLoginAt: '2026-11-13T14:30:00.000Z',
@@ -1489,7 +1558,7 @@ function createInitialDatabase(): HubDatabase {
       userId: 'usr-contrib-ai',
       clubId: 'club-ai',
       role: 'CONTRIBUTOR',
-      officerTitle: 'Secretary',
+      officerTitle: 'General Member',
       status: 'Active',
       authorizedBy: 'Aisha Rahman',
       authorizedAt: '2026-10-17T11:30:00.000Z',
@@ -2584,6 +2653,7 @@ function createInitialDatabase(): HubDatabase {
     blogPosts,
     clubBlogTaxonomies,
     publicCatalogEventsSeeded: true,
+    memberQuestions: createInitialMemberQuestions(),
     siteContent: cloneSiteContent(DEFAULT_SITE_CONTENT),
     siteContentUpdatedAt: new Date().toISOString(),
   };
@@ -3098,6 +3168,32 @@ export function getDb(): HubDatabase {
           cachedDb.users.push(seedUsr);
           migrated = true;
         }
+      }
+      if (!Array.isArray(cachedDb.memberQuestions)) {
+        cachedDb.memberQuestions = createInitialMemberQuestions();
+        migrated = true;
+      } else {
+        const seedQuestions = createInitialMemberQuestions();
+        for (const sq of seedQuestions) {
+          if (!cachedDb.memberQuestions.some((q) => q.questionId === sq.questionId)) {
+            cachedDb.memberQuestions.push(sq);
+            migrated = true;
+          }
+        }
+      }
+      const sofiaUser = cachedDb.users.find((u) => u.userId === 'usr-contrib-ai');
+      if (sofiaUser && (sofiaUser.title === 'Communications Contributor' || sofiaUser.departmentOrMajor === 'B.A. in Communication & Media')) {
+        sofiaUser.title = 'General Member';
+        sofiaUser.departmentOrMajor = 'B.A. in Communication and Media';
+        migrated = true;
+      }
+      const sofiaMem = cachedDb.memberships.find(
+        (m) => m.userId === 'usr-contrib-ai' && m.clubId === 'club-ai'
+      );
+      if (sofiaMem && (sofiaMem.officerTitle === 'Secretary' || sofiaMem.role !== 'CONTRIBUTOR')) {
+        sofiaMem.officerTitle = 'General Member';
+        sofiaMem.role = 'CONTRIBUTOR';
+        migrated = true;
       }
       if (migrated) {
         saveDb();

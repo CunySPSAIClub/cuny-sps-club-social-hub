@@ -44,7 +44,7 @@ export function ClubTeamView({
   invitations,
   onRefresh,
 }: ClubTeamViewProps) {
-  const { apiFetch } = useAuth();
+  const { apiFetch, session } = useAuth();
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [role, setRole] = useState<ClubMembership['role']>('EDITOR');
@@ -56,6 +56,15 @@ export function ClubTeamView({
     effectiveRole === 'SL_SUPER_ADMIN' ||
     effectiveRole === 'SL_ADMIN' ||
     effectiveRole === 'CLUB_LEAD';
+
+  const isInstitutionalAdmin =
+    effectiveRole === 'SL_SUPER_ADMIN' ||
+    effectiveRole === 'SL_ADMIN' ||
+    Boolean(session?.effectiveAdminRole);
+
+  const assignableRolesForUser = isInstitutionalAdmin
+    ? ASSIGNABLE_ROLES
+    : (['EDITOR', 'CONTRIBUTOR', 'VIEWER'] as ClubMembership['role'][]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,7 +218,7 @@ export function ClubTeamView({
                 onChange={(e) => setRole(e.target.value as ClubMembership['role'])}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md bg-white focus:outline-none focus:border-[#004B87]"
               >
-                {ASSIGNABLE_ROLES.map((r) => (
+                {assignableRolesForUser.map((r) => (
                   <option key={r} value={r}>
                     {formatRoleLabel(r)}
                   </option>
@@ -254,7 +263,14 @@ export function ClubTeamView({
             {members.map((m) => (
               <tr key={m.membershipId} className="hover:bg-slate-50/70">
                 <td className="py-3 px-4">
-                  <div className="font-medium text-slate-900">{m.name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-slate-900">{m.name}</div>
+                    {m.role === 'CONTRIBUTOR' && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Contributor
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs font-mono text-slate-500">{m.email}</div>
                 </td>
                 <td className="py-3 px-4 text-xs">
@@ -287,7 +303,7 @@ export function ClubTeamView({
                       }
                       className="px-2.5 py-1 text-xs border border-slate-300 rounded bg-white"
                     >
-                      {ASSIGNABLE_ROLES.map((r) => (
+                      {assignableRolesForUser.map((r) => (
                         <option key={r} value={r}>
                           {formatRoleLabel(r)}
                         </option>
