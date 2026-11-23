@@ -1,6 +1,6 @@
 import { notificationText } from '../../utils/workspacePresentation';
 import { integrationStatus } from '../../utils/integrationStatus';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   Bell,
@@ -148,6 +148,57 @@ export function ClubOverview({
 
   // Increased funding request form state
   const [showFundingForm, setShowFundingForm] = useState(false);
+
+  const effectiveWhatsAppGroups = useMemo<WhatsAppGroupLink[]>(() => {
+    if (whatsappGroups && whatsappGroups.length > 0) {
+      return whatsappGroups;
+    }
+    const fixedWa = club.links?.fixed?.find((f) => f.key === 'whatsapp' && f.active && f.url);
+    if (fixedWa && fixedWa.url) {
+      return [
+        {
+          groupId: `wa-${club.clubId}`,
+          clubId: club.clubId,
+          groupName: `${club.name} WhatsApp Community`,
+          inviteLink: fixedWa.url,
+          groupCategory: 'General Community',
+          description: fixedWa.description || 'Official member chat, event reminders & study circles.',
+          status: 'Connected',
+          deliveryMode: 'Interactive Share + Hub Outbox',
+          showInviteToMembers: true,
+          autoAlertNewEvents: true,
+          autoAlert24hReminders: true,
+          linkedByUserId: 'system',
+          linkedByName: 'Club Leadership',
+          linkedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+    }
+    if (club.clubId === 'club-msa') {
+      return [
+        {
+          groupId: 'wa-grp-msa-community',
+          clubId: 'club-msa',
+          groupName: 'Muslim Student Association (MSA) Alerts & Community',
+          inviteLink: 'https://chat.whatsapp.com/CunySpsMsaCommunity',
+          groupCategory: 'Event Alerts',
+          description:
+            'Official WhatsApp group for tea & study circles, Jummah updates, community service drives, and event reminders.',
+          status: 'Connected',
+          deliveryMode: 'Interactive Share + Hub Outbox',
+          showInviteToMembers: true,
+          autoAlertNewEvents: true,
+          autoAlert24hReminders: true,
+          linkedByUserId: 'usr-lead-msa',
+          linkedByName: 'Zainab Siddiqui',
+          linkedAt: '2026-10-25T11:30:00.000Z',
+          updatedAt: '2026-11-12T19:00:00.000Z',
+        },
+      ];
+    }
+    return [];
+  }, [whatsappGroups, club]);
   const [fundingAmount, setFundingAmount] = useState('2000');
   const [fundingTitle, setFundingTitle] = useState('');
   const [fundingBreakdown, setFundingBreakdown] = useState('');
@@ -636,35 +687,42 @@ export function ClubOverview({
       )}
 
       {/* Official WhatsApp Groups Card */}
-      {whatsappGroups && whatsappGroups.length > 0 && (
-        <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-4">
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <div className="flex items-center gap-2">
-              <ClubLinkPlatformIcon kind="whatsapp" className="w-4 h-4" />
-              <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                Official Club WhatsApp Community &amp; Event Alerts
-              </h3>
+      {effectiveWhatsAppGroups && effectiveWhatsAppGroups.length > 0 && (
+        <div className="bg-emerald-50/80 border-2 border-emerald-300 rounded-lg p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#16A34A] text-white flex items-center justify-center shrink-0">
+                <ClubLinkPlatformIcon kind="whatsapp" className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                  Official Club WhatsApp Community &amp; Event Alerts
+                </h3>
+                <p className="text-xs text-emerald-800">
+                  Join to connect with members, get meeting rooms, and receive announcements directly on WhatsApp.
+                </p>
+              </div>
             </div>
-            <span className="text-[11px] text-emerald-700 font-medium">
-              Open to all CUNY SPS students &amp; members
+            <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 shrink-0">
+              Open to all CUNY SPS students
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {whatsappGroups.map((grp) => (
+            {effectiveWhatsAppGroups.map((grp: WhatsAppGroupLink) => (
               <div
                 key={grp.groupId}
-                className="bg-white border border-emerald-200 rounded-md p-3 flex items-center justify-between gap-3"
+                className="bg-white border border-emerald-200 rounded-lg p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-emerald-400 transition-colors"
               >
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-slate-900 truncate">{grp.groupName}</div>
-                  <div className="text-[11px] text-slate-500 truncate">{grp.description || grp.groupCategory}</div>
+                  <div className="text-xs font-bold text-slate-900 truncate">{grp.groupName}</div>
+                  <div className="text-[11px] text-slate-500 truncate mt-0.5">{grp.description || grp.groupCategory}</div>
                 </div>
                 {grp.inviteLink ? (
                   <a
                     href={grp.inviteLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] rounded-md shrink-0 shadow-sm transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] rounded-md shrink-0 shadow-sm transition-colors cursor-pointer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Join WhatsApp</span>

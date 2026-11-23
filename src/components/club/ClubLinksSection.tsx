@@ -422,10 +422,15 @@ export function ClubLinksSection({
                   );
                 }
 
+                const targetUrl =
+                  row.key === 'whatsapp' && !row.url && clubId === 'club-msa'
+                    ? 'https://chat.whatsapp.com/CunySpsMsaCommunity'
+                    : row.url;
+
                 return (
                   <a
                     key={row.key}
-                    href={row.url}
+                    href={targetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-start gap-3 p-3.5 rounded-md border border-slate-200 bg-white hover:border-[#004B87] hover:bg-sky-50/30 transition-colors focus-visible:outline-2 focus-visible:outline-[#004B87]"
@@ -438,17 +443,24 @@ export function ClubLinksSection({
                         <span className="text-sm font-semibold text-slate-900 group-hover:text-[#004B87] truncate">
                           {meta.label}
                         </span>
-                        <ExternalLink
-                          className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#004B87] shrink-0"
-                          aria-hidden="true"
-                        />
+                        {row.key === 'whatsapp' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] rounded-md shadow-xs">
+                            Join WhatsApp
+                            <ExternalLink className="w-3 h-3 text-white" />
+                          </span>
+                        ) : (
+                          <ExternalLink
+                            className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#004B87] shrink-0"
+                            aria-hidden="true"
+                          />
+                        )}
                       </div>
                       {row.description ? (
                         <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
                           {row.description}
                         </p>
                       ) : (
-                        <p className="text-xs text-slate-500 mt-0.5 truncate">{row.url}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">{targetUrl}</p>
                       )}
                     </div>
                   </a>

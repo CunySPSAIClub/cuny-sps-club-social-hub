@@ -1778,6 +1778,7 @@ export function AppShell() {
                     if (!(await requestDraftDiscard())) return;
                     setActiveClubId(nextClub);
                     setEditingPost(null);
+                    void loadClubWorkspace(nextClub);
                   }}
                   className="w-full px-2.5 py-1.5 text-xs font-medium text-slate-900 bg-slate-50 border border-slate-300 rounded-md focus:outline-none focus:border-[#004B87]"
                 >
